@@ -60,7 +60,7 @@ export default function Register() {
         <form onSubmit={handleSubmit(onSubmit)} noValidate>
           <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg flex flex-col gap-8">
             <div>
-              <label htmlFor="email" className="block text-sm/6 font-medium text-white">Username</label>
+              <label htmlFor="email" className="block text-sm/6 font-medium text-white">Email</label>
               <div className="mt-2">
                 <input
                   id="email" type="email"
