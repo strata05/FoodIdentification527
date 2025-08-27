@@ -1,0 +1,8 @@
+
+fastapi==0.112.2
+pydantic==2.8.2
+boto3==1.37.38
+python-ulid==1.1.0
+bcrypt==4.3.0
+python_jose==3.4.0
+loguru==0.7.3
