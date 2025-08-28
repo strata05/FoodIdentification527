@@ -207,3 +207,7 @@ marimo/_lsp/
 __marimo__/
 
 /dynamodb
+
+# Keep uploads directory (via .gitkeep) but ignore its contents
+python/uploads/*
+!python/uploads/.gitkeep
