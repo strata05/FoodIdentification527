@@ -211,3 +211,5 @@ __marimo__/
 # Keep uploads directory (via .gitkeep) but ignore its contents
 python/uploads/*
 !python/uploads/.gitkeep
+
+python/models/*.hdf5
