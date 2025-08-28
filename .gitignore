@@ -212,4 +212,5 @@ __marimo__/
 python/uploads/*
 !python/uploads/.gitkeep
 
+# Ignore .hdf5 files
 python/models/*.hdf5
