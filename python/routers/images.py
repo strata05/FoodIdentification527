@@ -1,4 +1,3 @@
-# python/routers/images.py
 from typing import List, Optional
 from pathlib import Path
 from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, Query, status
@@ -10,6 +9,7 @@ from dao import image_dao
 from core.model_client import analyze_images
 
 router = APIRouter(prefix="/images", tags=["images"])
+
 
 @router.post("/upload", response_model=UploadResp, status_code=status.HTTP_201_CREATED)
 async def upload_images(
@@ -32,21 +32,29 @@ async def upload_images(
         items.append(item)
     return UploadResp(items=items)
 
+
 @router.get("", response_model=ListImagesResp)
 async def list_my_images(
     limit: int = Query(20, ge=1, le=100),
-    last_key: Optional[str] = Query(None, description="JSON string of the LastEvaluatedKey returned on the previous page (optional)"),
+    last_key: Optional[str] = Query(
+        None,
+        description="JSON string of the LastEvaluatedKey returned on the previous page (optional)",
+    ),
     current_user: User = Depends(verify_token),
 ):
     lek = None
     if last_key:
         import json
+
         try:
             lek = json.loads(last_key)
         except Exception:
             raise HTTPException(status_code=400, detail="Invalid last_key")
-    items, next_key = image_dao.list_items(current_user.u_id, limit=limit, last_evaluated_key=lek)
+    items, next_key = image_dao.list_items(
+        current_user.u_id, limit=limit, last_evaluated_key=lek
+    )
     return ListImagesResp(items=items, last_evaluated_key=next_key)
+
 
 @router.post("/analyze", response_model=AnalyzeResp)
 async def analyze(body: AnalyzeReq, current_user: User = Depends(verify_token)):
