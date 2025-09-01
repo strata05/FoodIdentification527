@@ -5,6 +5,7 @@ import numpy as np
 from PIL import Image
 
 MODEL_PATH = os.getenv("FOOD_MODEL_PATH", "models/best_model_101class.hdf5")
+print(MODEL_PATH)
 INPUT_SIZE = 200  # image size 200*200
 DEFAULT_TOPK = 3
 
@@ -156,8 +157,8 @@ async def analyze_images(
     }
     """
     model = _load_model()
-    batch = np.stack([_preprocess(p) for p in file_paths], axis=0)  
-    preds = model.predict(batch, verbose=0)  
+    batch = np.stack([_preprocess(p) for p in file_paths], axis=0)
+    preds = model.predict(batch, verbose=0)
 
     out = []
     for p, pred in zip(file_paths, preds):
