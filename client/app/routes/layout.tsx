@@ -1,3 +1,4 @@
+'use client';
 import type {Route} from "./+types/home";
 import logoSvg from "./logo.svg";
 
