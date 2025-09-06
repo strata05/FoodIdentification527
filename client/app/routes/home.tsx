@@ -98,7 +98,7 @@ export default function Home() {
     if (!files || files.length === 0) return;
     const previews = Array.from(files).map(f => ({ url: URL.createObjectURL(f), name: f.name }));
     setLocalPreviews(previews);
-    await onUpload(files);
+    // await onUpload(files);
   };
 
   const onAnalyze = async () => {
