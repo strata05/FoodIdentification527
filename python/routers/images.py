@@ -11,6 +11,10 @@ from utils.file import save_upload_file, UPLOAD_ROOT
 from dao import image_dao
 from core.model_client import analyze_images
 
+from .nutrition import fetch_nutrition  
+from dao import nutrition_dao          
+import inspect                         
+
 # NEW: nutrition auto-enrich & save
 from services.nutrition_service import enrich_and_save_for_one  # NEW
 
@@ -84,10 +88,12 @@ async def analyze(body: AnalyzeReq, current_user: User = Depends(verify_token)):
             recs.append(rec)  # NEW
 
     raw = await analyze_images(paths, topk=body.topk)
+    print(f"Raw analysis result: {raw}")
+    print(f"Raw result type: {type(raw)}")
 
     # NEW: normalize various shapes into a list of dicts with "topk"
-    if isinstance(raw, dict) and "result" in raw:
-        seq = raw["result"]
+    if isinstance(raw, dict) and "results" in raw:
+        seq = raw["results"]
     else:
         seq = raw
 
@@ -144,7 +150,6 @@ async def analyze(body: AnalyzeReq, current_user: User = Depends(verify_token)):
             label = top1["class"]
             score = float(top1.get("score") or 0)
 
-            # NEW: support both async/sync fetch_nutrition
             if inspect.iscoroutinefunction(fetch_nutrition):
                 nutrition = await fetch_nutrition(label)
             else:

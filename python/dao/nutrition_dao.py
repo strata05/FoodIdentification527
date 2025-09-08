@@ -3,6 +3,10 @@ from typing import Dict, Any, List, Optional
 import time, os, boto3
 from decimal import Decimal
 from botocore.exceptions import ClientError
+from boto3.dynamodb.conditions import Key
+from models.history import NutritionHistoryItem
+from botocore.exceptions import ClientError
+from .image_dao import get_by_image_id
 
 TABLE = os.getenv("NUTRITION_TABLE", "image_nutrition")
 # NEW: support both env names and default to 8011
@@ -114,3 +118,57 @@ def put_item(item: Dict[str, Any]) -> None:
     ensure_table()
     item = _decimalize(item)
     _dynamo.Table(TABLE).put_item(Item=item)
+
+
+
+_table = None
+
+def _get():
+    global _table
+    if _table:
+        return _table
+    _table = _dynamo.Table(TABLE)  
+    try:
+        _table.load()
+        return _table
+    except ClientError as e:
+        if e.response.get("Error", {}).get("Code") == "ResourceNotFoundException":
+            ensure_table() 
+            return _get()  
+        raise
+
+
+def list_items_by_user(u_id: str, limit: int = 20, last_evaluated_key: Optional[dict] = None):
+    kwargs = {
+        "KeyConditionExpression": Key("u_id").eq(u_id),
+        "ScanIndexForward": False,  
+        "Limit": limit,
+    }
+
+    if last_evaluated_key:
+        kwargs["ExclusiveStartKey"] = last_evaluated_key
+        
+    resp = _get().query(**kwargs)
+
+    items = []
+    for raw in resp.get("Items", []):
+        url = get_by_image_id(raw["image_id"]).relative_path
+
+  
+        name = raw.get("original_name", "")
+        if isinstance(name, dict):
+            name = name.get("filename") or "unknown"
+
+        items.append(NutritionHistoryItem(
+            image_id=str(raw["image_id"]),
+            label=str(raw["label"]),
+            score=float(raw["score"]),
+            created_at=int(raw["created_at"]),
+            nutrition=dict(raw["nutrition"]),
+            original_name=name,
+            image_url=url
+        ))
+ 
+
+    return items, resp.get("LastEvaluatedKey")
+
