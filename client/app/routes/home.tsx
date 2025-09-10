@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import {useCallback, useEffect, useMemo, useRef, useState} from "react";
 import { get, post } from "~/net";
 import { useAtomValue } from "jotai";
 import { userAtom } from "~/auth";
 
 import { useNavigate } from "react-router";
 import { getToken } from "~/auth";
+import HistoryItem, {type Item} from "~/component/history-item";
 
 type ImgItem = {
   u_id: string;
@@ -39,6 +40,8 @@ export default function Home() {
     if (!getToken()) nav("/login", { replace: true });
   }, [nav]);
 
+  const maxFiles = 5;
+
   const user = useAtomValue(userAtom);
   const [list, setList] = useState<ImgItem[]>([]);
   const [sel, setSel] = useState<Record<string, boolean>>({});
@@ -46,23 +49,23 @@ export default function Home() {
   const [busy, setBusy] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [localPreviews, setLocalPreviews] = useState<
-    { url: string; name: string }[]
+    { url: string; name: string, file: File }[]
   >([]);
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  // const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const load = async () => {
-    try {
-      const r = await get("/images", { limit: 50 });
-      setList(r.data.items);
-    } catch (e: any) {
-      setMsg(e?.message ?? "load images failed");
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
+  // const load = async () => {
+  //   try {
+  //     const r = await get("/images", { limit: 50 });
+  //     setList(r.data.items);
+  //   } catch (e: any) {
+  //     setMsg(e?.message ?? "load images failed");
+  //   }
+  // };
+  //
+  // useEffect(() => {
+  //   load();
+  // }, []);
 
   useEffect(() => {
     return () => localPreviews.forEach((p) => URL.revokeObjectURL(p.url));
@@ -76,36 +79,44 @@ export default function Home() {
     [sel],
   );
 
-  const onUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
-    setBusy(true);
-    setMsg(null);
-    try {
-      const fd = new FormData();
-      Array.from(files).forEach((f) => fd.append("files", f));
-
-      await post("/images/upload", fd, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      await load();
-      setLocalPreviews([]);
-    } catch (e: any) {
-      setMsg(e?.message ?? "upload failed");
-      console.error(e);
-    } finally {
-      setBusy(false);
-    }
-  };
+  // const onUpload = async (files: FileList | null) => {
+  //   if (!files || files.length === 0) return;
+  //   setBusy(true);
+  //   setMsg(null);
+  //   try {
+  //     const fd = new FormData();
+  //     Array.from(files).forEach((f) => fd.append("files", f));
+  //
+  //     await post("/images/upload", fd, {
+  //       headers: { "Content-Type": "multipart/form-data" },
+  //     });
+  //     // await load();
+  //     setLocalPreviews([]);
+  //   } catch (e: any) {
+  //     setMsg(e?.message ?? "upload failed");
+  //     console.error(e);
+  //   } finally {
+  //     setBusy(false);
+  //   }
+  // };
 
   const onPickFiles = async (files: FileList | null) => {
+    if (localPreviews.length >= maxFiles) {
+      return;
+    }
+
     if (!files || files.length === 0) return;
-    const previews = Array.from(files).map((f) => ({
-      url: URL.createObjectURL(f),
-      name: f.name,
-    }));
-    setLocalPreviews(previews);
+
+    const previews = Array.from(files)
+      .slice(0, maxFiles - localPreviews.length)
+      .map((f) => ({
+        url: URL.createObjectURL(f),
+        name: f.name,
+        file: f,
+      }));
+    setLocalPreviews([...localPreviews, ...previews]);
     // await onUpload(files);
-    setPendingFiles(Array.from(files));
+    // setPendingFiles(Array.from(files));
   };
 
   const onAnalyze = async () => {
@@ -120,9 +131,9 @@ export default function Home() {
 
       let idsToAnalyze = [...selectedIds];
 
-      if (pendingFiles.length > 0) {
+      if (localPreviews.length > 0) {
         const fd = new FormData();
-        pendingFiles.forEach((f) => fd.append("files", f));
+        localPreviews.forEach((f) => fd.append("files", f.file));
         const up = await post("/images/upload", fd, {
           headers: { "Content-Type": "multipart/form-data" },
         });
@@ -133,9 +144,9 @@ export default function Home() {
 
         idsToAnalyze = [...new Set([...idsToAnalyze, ...newIds])];
 
-        await load();
-        setLocalPreviews([]);
-        setPendingFiles([]);
+        // await load();
+        // setLocalPreviews([]);
+        // setPendingFiles([]);
       }
 
       // limit the number of analyzed photos to at most 5
@@ -155,6 +166,11 @@ export default function Home() {
         topk: 3,
       });
       console.log("Analyze response:", r.data);
+
+      //
+      loadResult(idsToAnalyze.length).then(() => {
+        setLocalPreviews([]);
+      });
     } catch (e: any) {
       setMsg(e?.message ?? "analyze failed");
     } finally {
@@ -162,17 +178,36 @@ export default function Home() {
     }
   };
 
-  const toggleAll = () => {
-    if (selectedIds.length === list.length) {
-      setSel({});
-    } else {
-      const next: Record<string, boolean> = {};
-      list.forEach((it) => (next[it.image_id] = true));
-      setSel(next);
-    }
-  };
+  // const toggleAll = () => {
+  //   if (selectedIds.length === list.length) {
+  //     setSel({});
+  //   } else {
+  //     const next: Record<string, boolean> = {};
+  //     list.forEach((it) => (next[it.image_id] = true));
+  //     setSel(next);
+  //   }
+  // };
 
-  const clearSelection = () => setSel({});
+  const clearSelection = () => {
+    // setSel({});
+    console.log("#XX")
+    setLocalPreviews([]);
+  }
+
+  //
+  const [historyItems, setHistoryItems] = useState<Item[]>([]);
+  const loadResult = useCallback((len: number) => {
+    // 初始化的时候不调整页面的页码
+    return get("/history", {limit: len}).then(r => {
+      setHistoryItems(r.data.items);
+    }).catch(e => {
+      console.log("load failed:", e);
+    });
+  }, []);
+
+  // useEffect(() => {
+  //   load("init");
+  // }, []);
 
   const onDrop: React.DragEventHandler<HTMLDivElement> = async (e) => {
     e.preventDefault();
@@ -200,18 +235,18 @@ export default function Home() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button
+          {/*<button
             onClick={toggleAll}
             className="rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-white px-3 py-2 text-sm"
           >
             {selectedIds.length === list.length && list.length > 0
               ? "Unselect all"
               : "Select all"}
-          </button>
+          </button>*/}
           <button
             onClick={clearSelection}
             className="rounded-lg border border-white/15 bg-white/5 hover:bg-white/10 text-white px-3 py-2 text-sm"
-            disabled={selectedIds.length === 0}
+            disabled={localPreviews.length === 0}
           >
             Clear
           </button>
@@ -219,14 +254,14 @@ export default function Home() {
             onClick={onAnalyze}
             disabled={
               busy ||
-              (selectedIds.length === 0 && pendingFiles.length === 0) ||
-              selectedIds.length + pendingFiles.length > 5
+              (localPreviews.length === 0) ||
+              localPreviews.length > 5
             }
             className="rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-400 disabled:opacity-40 disabled:cursor-not-allowed"
             title={
-              selectedIds.length === 0 && pendingFiles.length === 0
+              localPreviews.length === 0
                 ? "Select at least one image or add files"
-                : selectedIds.length + pendingFiles.length > 5
+                : localPreviews.length > 5
                   ? "You can analyze at most 5 images"
                   : "Analyze selected images"
             }
@@ -255,9 +290,9 @@ export default function Home() {
               📷
             </div>
             <div className="flex-1">
-              <div className="text-white font-medium">Upload images</div>
+              <div className="text-white font-medium">Upload some images to get started.</div>
               <div className="text-xs text-gray-400">
-                Click to choose or drag & drop JPG/PNG. Up to 50 items listed.
+                Click to choose or drag & drop JPG/PNG. Up to {maxFiles} pictures can be analyzed at one time.
               </div>
               {localPreviews.length > 0 && (
                 <div className="text-xs text-emerald-300 mt-1">
@@ -316,7 +351,11 @@ export default function Home() {
         </div>
       )}
 
-      <div className="mt-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 mt-6">
+        {historyItems && historyItems.map((it) => (<HistoryItem key={it.created_at} it={it} />))}
+      </div>
+
+      {/*<div className="mt-6">
         {list.length === 0 ? (
           <div className="rounded-2xl border border-white/10 bg-white/5 p-10 text-center text-gray-300">
             <div className="text-lg text-white mb-1">No images yet</div>
@@ -366,7 +405,7 @@ export default function Home() {
             })}
           </div>
         )}
-      </div>
+      </div>*/}
     </div>
   );
 }
