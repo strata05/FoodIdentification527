@@ -80,12 +80,12 @@ export default function Home() {
     try {
       const fd = new FormData();
       Array.from(files).forEach(f => fd.append("files", f));
-      
+
       await post("/images/upload", fd, {
         headers: { "Content-Type": "multipart/form-data" },
       });
       await load();
-      setLocalPreviews([]); 
+      setLocalPreviews([]);
     } catch (e: any) {
       setMsg(e?.message ?? "upload failed");
       console.error(e);
