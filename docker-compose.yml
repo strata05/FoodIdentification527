@@ -1,3 +1,4 @@
+version: "3.9"
 services:
   dynamodb:
     image: amazon/dynamodb-local:latest
@@ -8,3 +9,21 @@ services:
     volumes:
       - "./dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
+
+  backend:
+    build: ./python
+    container_name: backend
+    env_file:
+      - ./python/.env
+    depends_on:
+      - dynamodb
+    ports:
+      - "8000:8000"
+    command: uvicorn services.main:app --host 0.0.0.0 --port 8000
+
+  frontend:
+    build: ./client
+    container_name: frontend
+    ports:
+      - "80:80"
+    command: npm run dev -- --host 0.0.0.0 --port 80
