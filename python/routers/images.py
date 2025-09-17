@@ -23,6 +23,8 @@ from services.nutrition_service import enrich_and_save_for_one  # NEW
 
 logger = logging.getLogger(__name__)  # NEW
 
+from utils.s3_utils import upload_fileobj, presign_get
+
 router = APIRouter(prefix="/images", tags=["images"])
 
 
