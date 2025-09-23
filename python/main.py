@@ -1,10 +1,24 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
+
+from dotenv import load_dotenv
+import boto3
+import sys
 import os
 
 from routers import router as api_router
-
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
+print("DEBUG S3_BUCKET =", os.getenv("S3_BUCKET"), flush=True)
+print("DEBUG DDB_TABLE_USERS =", os.getenv("DDB_TABLE_USERS"), flush=True)
+print("DEBUG DDB_TABLE_USER_IMAGES =", os.getenv("DDB_TABLE_USER_IMAGES"), flush=True)
+sys.stdout.flush()
+try:
+    ddb = boto3.client("dynamodb", region_name=os.getenv("AWS_REGION"))
+    tables = ddb.list_tables()
+    print("DEBUG DynamoDB tables =", tables, flush=True)
+except Exception as e:
+    print("DEBUG DynamoDB error =", e, flush=True)
 app = FastAPI()
 
 
