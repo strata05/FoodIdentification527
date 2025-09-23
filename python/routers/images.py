@@ -16,6 +16,7 @@ from utils.s3_utils import upload_fileobj, presign_get
 from .nutrition import fetch_nutrition
 from dao import nutrition_dao
 import inspect
+import os
 
 # NEW: nutrition auto-enrich & save
 from services.nutrition_service import enrich_and_save_for_one  # NEW
@@ -25,10 +26,12 @@ logger = logging.getLogger(__name__)  # NEW
 
 from utils.s3_utils import upload_fileobj, presign_get
 
+ENV = os.getenv("ENV", "development")
+
 router = APIRouter(prefix="/images", tags=["images"])
 
 
-@router.post("/upload", status_code=status.HTTP_201_CREATED)
+@router.post("/upload")
 async def upload_images(
     files: List[UploadFile] = File(..., description="support multiple files"),
     current_user: User = Depends(verify_token),
@@ -75,7 +78,7 @@ async def upload_images(
         # 4) 返回里附带预签名 URL，前端可直接显示
         items.append({**item.model_dump(), "url": presign_get(s3_key)})
 
-    return {"items": items}
+    return {"success": True, "items": items}
 
 
 @router.get("")
@@ -102,7 +105,7 @@ async def list_my_images(
     )
 
     out = [{**i.model_dump(), "url": presign_get(i.relative_path)} for i in items]
-    return {"items": out, "last_evaluated_key": next_key}
+    return {"success": True, "items": out, "last_evaluated_key": next_key}
 
 
 @router.get("/{image_id}/url")
@@ -113,12 +116,13 @@ async def get_image_url(image_id: str, current_user: User = Depends(verify_token
     rec = image_dao.get_by_image_id(image_id)
     if not rec or rec.u_id != current_user.u_id:
         raise HTTPException(status_code=404, detail="image not found")
-    return {"url": presign_get(rec.relative_path)}
+    return {"success": True, "url": presign_get(rec.relative_path)}
 
 
 @router.post("/analyze")
 async def analyze(body: AnalyzeReq, current_user: User = Depends(verify_token)):
-    paths: List[Path] = []
+    # paths: List[Path] = []
+    paths: List[str] = []
     recs: List[ImageItem] = []  # NEW: keep records to know image_id for saving
     urls: List[str] = []
     if body.image_ids:
@@ -126,12 +130,15 @@ async def analyze(body: AnalyzeReq, current_user: User = Depends(verify_token)):
             rec = image_dao.get_by_image_id(iid)
             if not rec or rec.u_id != current_user.u_id:
                 raise HTTPException(status_code=404, detail=f"image not found: {iid}")
-            paths.append(UPLOAD_ROOT / rec.relative_path)
+
+            # paths.append(UPLOAD_ROOT / rec.relative_path)
+            paths.append(rec.relative_path)
             recs.append(rec)  # NEW
     else:
         items, _ = image_dao.list_items(current_user.u_id, limit=body.limit)
         for rec in items:
-            paths.append(UPLOAD_ROOT / rec.relative_path)
+            # paths.append(UPLOAD_ROOT / rec.relative_path)
+            paths.append(rec.relative_path)
             recs.append(rec)  # NEW
 
     raw = await analyze_images(paths, topk=body.topk)

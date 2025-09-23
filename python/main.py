@@ -28,3 +28,7 @@ app.include_router(api_router, prefix="/api")
 
 if os.path.exists("uploads"):
     app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}

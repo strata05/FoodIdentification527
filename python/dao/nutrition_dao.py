@@ -10,6 +10,7 @@ from botocore.exceptions import ClientError
 
 from db import dynamodb
 from models.history import NutritionHistoryItem
+from utils.sm_utils import sign_url_canned
 from .image_dao import get_by_image_id
 
 TABLE = os.getenv("NUTRITION_TABLE", "image_nutrition")
@@ -156,7 +157,7 @@ def list_items_by_user(u_id: str, limit: int = 20, last_evaluated_key: Optional[
             created_at=int(raw["created_at"]),
             nutrition=dict(raw["nutrition"]),
             original_name=name,
-            image_url=url
+            image_url=sign_url_canned(url)
         ))
 
 

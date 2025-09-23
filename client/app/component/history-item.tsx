@@ -47,7 +47,7 @@ export default function HistoryItem({it}: {it:Item}) {
     >
       <div className="mb-3">
         <img
-          src={`/uploads/${it.image_url}`}
+          src={process.env.NODE_ENV === 'development' ? `/uploads/${it.image_url}` : it.image_url}
           alt={it.label}
           className="w-full h-48 object-contain rounded-t"
         />

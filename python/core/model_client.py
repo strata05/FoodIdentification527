@@ -3,7 +3,11 @@ from pathlib import Path
 from typing import List, Dict, Any
 import numpy as np
 from PIL import Image
+from utils.file import UPLOAD_ROOT
+from utils.s3_utils import get_s3_image
+import io
 
+ENV = os.getenv("ENV", "development")
 MODEL_PATH = os.getenv("FOOD_MODEL_PATH", "models/best_model_101class.hdf5")
 print(MODEL_PATH)
 INPUT_SIZE = 200  # image size 200*200
@@ -131,11 +135,16 @@ def _load_model():
     return _model
 
 
-def _preprocess(p: Path) -> np.ndarray:
+def _preprocess(p: str) -> np.ndarray:
+    image = None
+    if ENV == "production":
+        img_bytes = get_s3_image(p)
+        image = Image.open(io.BytesIO(img_bytes))
+    else:
+        image = Image.open(UPLOAD_ROOT / p)
 
-    img = Image.open(p).convert("RGB").resize((INPUT_SIZE, INPUT_SIZE))
-    x = np.asarray(img, dtype=np.float32) / 255.0
-    return x
+    image = image.convert("RGB").resize((INPUT_SIZE, INPUT_SIZE))
+    return np.asarray(image, dtype=np.float32) / 255.0
 
 
 def _postprocess(vec: np.ndarray, topk: int) -> List[Dict[str, Any]]:
@@ -144,7 +153,7 @@ def _postprocess(vec: np.ndarray, topk: int) -> List[Dict[str, Any]]:
 
 
 async def analyze_images(
-    file_paths: List[Path], topk: int = DEFAULT_TOPK
+    file_paths: List[str], topk: int = DEFAULT_TOPK
 ) -> Dict[str, Any]:
     """
     Return format:
@@ -163,6 +172,6 @@ async def analyze_images(
     out = []
     for p, pred in zip(file_paths, preds):
         top = _postprocess(pred, topk)
-        out.append({"file": p.name, "topk": top})
+        out.append({"file": p, "topk": top})
 
     return {"mock": False, "results": out}

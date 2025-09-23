@@ -40,7 +40,6 @@ def verify_token(token: str = Depends(oauth2_scheme)):
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         user_id: str = payload.get("id")
         exp = payload.get("exp")
-        print("exp", exp)
         if not user_id or not exp or (exp < int(datetime.now(timezone.utc).timestamp())):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

@@ -214,3 +214,4 @@ python/uploads/*
 
 # Ignore .hdf5 files
 python/models/*.hdf5
+deploy

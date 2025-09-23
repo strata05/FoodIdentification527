@@ -172,6 +172,7 @@ export default function Home() {
         setLocalPreviews([]);
       });
     } catch (e: any) {
+      console.log("#x", e)
       setMsg(e?.message ?? "analyze failed");
     } finally {
       setBusy(false);

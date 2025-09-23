@@ -2,7 +2,11 @@ from __future__ import annotations
 from typing import Optional, Dict, Any
 import os, httpx
 
-FDC_API_KEY = os.getenv("FDC_API_KEY", "")
+from utils.sm_utils import get_secret
+
+# FDC_API_KEY = os.getenv("FDC_API_KEY", "")
+SECRET_ID = os.getenv("FDC_API_KEY_NAME", "api_key/fdc")
+FDC_API_KEY = get_secret(SECRET_ID)
 
 def _from_off(name: str) -> Optional[Dict[str, Any]]:
     url = ("https://world.openfoodfacts.org/cgi/search.pl"

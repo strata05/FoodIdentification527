@@ -1,6 +1,6 @@
 import boto3
 
-BUCKET = "food-identification-images"   # 换成你的桶名
+BUCKET = "food-s3-b639ef25"
 REGION = "us-east-1"
 
 s3 = boto3.client("s3", region_name=REGION)
@@ -17,3 +17,7 @@ def presign_get(key: str, expires: int = 3600) -> str:
         Params={"Bucket": BUCKET, "Key": key},
         ExpiresIn=expires,
     )
+
+def get_s3_image(key: str):
+    obj = s3.get_object(Bucket=BUCKET, Key=key)
+    return obj["Body"].read()
