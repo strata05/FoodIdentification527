@@ -47,6 +47,7 @@ def create_user_table():
         if e.response['Error']['Code'] == 'ResourceNotFoundException':
             return __create_user_table()
         else:
+            table = None
             raise
 
 def get_table():
@@ -83,7 +84,6 @@ def insert_user(user: User):
     :return:
     """
     _table = get_table()
-    print(user.model_dump())
     _table.put_item(Item=user.model_dump())
 
 def find_user_by_id(user_id: str):

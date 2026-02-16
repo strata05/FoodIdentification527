@@ -1,3 +1,4 @@
+'use client';
 import {useAtomValue} from "jotai";
 import {setToken} from "~/auth";
 import logoSvg from "./logo.svg";
