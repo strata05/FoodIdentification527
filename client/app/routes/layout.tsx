@@ -1,3 +1,4 @@
+'use client';
 import type {Route} from "./+types/home";
 import logoSvg from "./logo.svg";
 
@@ -17,8 +18,8 @@ export function meta({}: Route.MetaArgs) {
 }
 
 const navigation = [
-  {name: 'Dashboard', href: '#', current: true},
-  {name: 'History', href: '#', current: false},
+  {name: 'Dashboard', to: '/', current: true},
+  {name: 'History', to: '/history', current: false},
 ]
 
 function classNames(...classes: string[]) {
@@ -93,17 +94,17 @@ export default function Index() {
             <div className="hidden sm:ml-6 sm:block">
               <div className="flex space-x-4">
                 {navigation.map((item) => (
-                  <a
+                  <NavLink
                     key={item.name}
-                    href={item.href}
+                    to={item.to}
                     aria-current={item.current ? 'page' : undefined}
-                    className={classNames(
-                      item.current ? 'bg-gray-950/50 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
-                      'rounded-md px-3 py-2 text-sm font-medium',
-                    )}
+                    className={({ isActive }) =>classNames(
+                      isActive ? 'bg-gray-950/50 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
+                      'rounded-md px-3 py-2 text-sm font-medium')}
+                    end
                   >
                     {item.name}
-                  </a>
+                  </NavLink>
                 ))}
               </div>
             </div>
@@ -160,10 +161,10 @@ export default function Index() {
       <DisclosurePanel className="sm:hidden">
         <div className="space-y-1 px-2 pt-2 pb-3">
           {navigation.map((item) => (
-            <DisclosureButton
+            <NavLink
               key={item.name}
-              as="a"
-              href={item.href}
+              // as="a"
+              to={item.to}
               aria-current={item.current ? 'page' : undefined}
               className={classNames(
                 item.current ? 'bg-gray-950/50 text-white' : 'text-gray-300 hover:bg-white/5 hover:text-white',
@@ -171,7 +172,7 @@ export default function Index() {
               )}
             >
               {item.name}
-            </DisclosureButton>
+            </NavLink>
           ))}
         </div>
       </DisclosurePanel>

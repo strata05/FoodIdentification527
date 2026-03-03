@@ -1,3 +1,4 @@
+'use client';
 import logoSvg from "./logo.svg";
 import {useForm} from "react-hook-form";
 import {z} from "zod";

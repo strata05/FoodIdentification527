@@ -5,6 +5,7 @@ export default [
   layout("routes/layout.tsx", [
     index("routes/home.tsx"),
     // route("contact", "./marketing/contact.tsx"),
+    route("history", "routes/history.tsx")
   ]),
   route("login", "routes/login.tsx"),
   route("register", "routes/register.tsx"),
